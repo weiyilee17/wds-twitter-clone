@@ -16,17 +16,43 @@ datasource db {
     relationMode = "prisma"
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
-    name      String
+model Tweet {
+    id        String   @id @default(uuid())
+    userId    String
+    content   String
     createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
 
-    createdBy   User   @relation(fields: [createdById], references: [id])
-    createdById String
+    // When user is deleted, all the tweets he made would also be deleted
+    user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    likes Like[]
 
-    @@index([name])
+    @@index([userId])
 }
+
+model Like {
+    userId  String
+    tweetId String
+
+    user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+    tweet Tweet @relation(fields: [tweetId], references: [id], onDelete: Cascade)
+
+    // One tweet can only be liked by an user once, so the id of a like can be composed by userId and tweetId
+    @@id([userId, tweetId])
+    @@index([userId])
+    @@index([tweetId])
+}
+
+// model Post {
+//     id        Int      @id @default(autoincrement())
+//     name      String
+//     createdAt DateTime @default(now())
+//     updatedAt DateTime @updatedAt
+
+//     createdBy   User   @relation(fields: [createdById], references: [id])
+//     createdById String
+
+//     @@index([name])
+// }
 
 // Necessary for Next auth
 model Account {
@@ -66,7 +92,13 @@ model User {
     image         String?
     accounts      Account[]
     sessions      Session[]
-    posts         Post[]
+    // posts         Post[]
+
+    // Non-Next Auth
+    tweets    Tweet[]
+    likes     Like[]
+    followers User[]  @relation(name: "Followers")
+    follows   User[]  @relation(name: "Followers")
 }
 
 model VerificationToken {
